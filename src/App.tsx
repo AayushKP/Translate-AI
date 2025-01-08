@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatMistralAI } from "@langchain/mistralai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
@@ -7,7 +7,21 @@ function App() {
   const [translatedText, setTranslatedText] = useState<string>("");
   const [fromLanguage, setFromLanguage] = useState<string>("English");
   const [toLanguage, setToLanguage] = useState<string>("Italian");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(
+    localStorage.getItem("theme") === "dark"
+  );
   const apiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
 
   const model = new ChatMistralAI({
     model: "mistral-large-latest",
@@ -20,6 +34,8 @@ function App() {
       alert("Please enter some text to translate.");
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const systemTemplate = `Translate the following text from ${fromLanguage} to ${toLanguage}. Only return the ${toLanguage} translation without any extra explanation or text.`;
@@ -42,6 +58,8 @@ function App() {
     } catch (error) {
       console.error("Error during translation:", error);
       setTranslatedText("Error occurred during translation.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -64,82 +82,100 @@ function App() {
   ];
 
   return (
-    <div className="min-h-screen w-full flex justify-center items-center p-4 sm:p-8">
-      <div className="flex flex-col justify-center items-center gap-10 w-full sm:w-1/2">
-        <div className="text-purple-600 text-3xl sm:text-5xl font-bold">
-          Translate-AI
-        </div>
-        <div className="w-full flex flex-col gap-4 items-center">
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-10">
-            <div>
-              <label
-                htmlFor="fromLanguage"
-                className="block mb-1 text-sm sm:text-base"
-              >
-                From:
-              </label>
-              <select
-                id="fromLanguage"
-                value={fromLanguage}
-                onChange={(e) => setFromLanguage(e.target.value)}
-                className="border-2 border-black p-2 rounded w-full sm:w-auto"
-              >
-                {languages.map((language) => (
-                  <option key={language} value={language}>
-                    {language}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="toLanguage"
-                className="block mb-1 text-sm sm:text-base"
-              >
-                To:
-              </label>
-              <select
-                id="toLanguage"
-                value={toLanguage}
-                onChange={(e) => setToLanguage(e.target.value)}
-                className="border-2 border-black p-2 rounded w-full sm:w-auto"
-              >
-                {languages.map((language) => (
-                  <option key={language} value={language}>
-                    {language}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="w-full flex flex-col sm:flex-row gap-4 sm:gap-10 items-center justify-center">
-            <input
-              value={input}
-              onChange={(event) => {
-                setInput(event.target.value);
-                if (!event.target.value) {
-                  setTranslatedText("");
-                }
-              }}
-              type="text"
-              className="w-full sm:w-3/4 border-2 border-black p-2 rounded"
-              placeholder="Enter your text here"
-            />
+    <div className="min-h-screen w-full bg-white dark:bg-gray-900 text-black dark:text-white flex flex-col justify-center items-center px-4 sm:px-10 py-8">
+      {/* Dark Mode Toggle */}
+      <div className="absolute top-4 right-4">
+        <button
+          className="p-2 border rounded-full bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+          onClick={() => setDarkMode(!darkMode)}
+        >
+          {darkMode ? "🌞 Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </div>
+
+      {/* Main container with responsive layout */}
+      <div className="flex flex-col lg:flex-row w-full max-w-screen-lg border border-blue-500  rounded-lg shadow-lg overflow-hidden h-auto lg:h-[70vh]">
+        {/* Input and Output Sections */}
+        {["Input", "Output"].map((section, index) => (
+          <div
+            key={section}
+            className="flex flex-col w-full lg:w-1/2 p-4 bg-white dark:bg-gray-800"
+            style={{ minHeight: "50vh" }}
+          >
+            {/* Language Selector */}
             <div
-              className="bg-slate-600 text-white p-3 flex items-center justify-center rounded-xl cursor-pointer mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto"
-              onClick={handleTranslate}
+              className={`flex ${
+                index === 0 ? "justify-start" : "justify-end"
+              } gap-4 p-4`}
             >
-              Translate
+              <select
+                id={index === 0 ? "fromLanguage" : "toLanguage"}
+                value={index === 0 ? fromLanguage : toLanguage}
+                onChange={(e) =>
+                  index === 0
+                    ? setFromLanguage(e.target.value)
+                    : setToLanguage(e.target.value)
+                }
+                className="border-2 border-blue-500 p-2 rounded w-full sm:w-auto focus:outline-none text-sm sm:text-base bg-white dark:bg-gray-700 text-black dark:text-white"
+              >
+                {languages.map((language) => (
+                  <option key={language} value={language}>
+                    {language}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Content Section */}
+            <div
+              className="flex flex-col gap-4 p-4 flex-grow border-2 border-blue-500  rounded bg-white dark:bg-gray-700 overflow-y-auto"
+              style={{ minHeight: "20vh" }}
+            >
+              {index === 0 ? (
+                <textarea
+                  value={input}
+                  onChange={(event) => {
+                    setInput(event.target.value);
+                    if (!event.target.value) {
+                      setTranslatedText("");
+                    }
+                  }}
+                  className="w-full h-full p-4 resize-none focus:outline-none text-sm sm:text-base lg:text-2xl bg-white dark:bg-gray-700 text-black dark:text-white"
+                  placeholder="Enter your text here"
+                  style={{ minHeight: "50px" }}
+                />
+              ) : (
+                <div
+                  className="w-full h-full p-4 text-sm sm:text-base lg:text-lg text-black dark:text-white"
+                  style={{ minHeight: "50px" }}
+                >
+                  {translatedText ? (
+                    <p className="text-left">{translatedText}</p>
+                  ) : (
+                    <p className="text-left text-black/40 dark:text-white/40">
+                      Translation will appear here...
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-        <div className="w-full h-32 bg-slate-400 flex items-center justify-center rounded mt-4">
-          {translatedText ? (
-            <p className="text-center">{translatedText}</p>
+        ))}
+      </div>
+
+      {/* Translate Button */}
+      <div className="w-full flex justify-center mt-4">
+        <button
+          className="bg-slate-600 dark:bg-slate-800 text-white p-3 text-base sm:text-lg lg:text-xl flex items-center justify-center rounded-xl cursor-pointer w-full sm:w-auto transform transition-transform hover:-translate-y-1"
+          onClick={handleTranslate}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <div className="animate-spin border-4 border-t-4 border-white rounded-full h-6 w-6"></div>
           ) : (
-            <p className="text-center">Translation will appear here...</p>
+            "Translate"
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
