@@ -11,6 +11,7 @@ function App() {
   const [darkMode, setDarkMode] = useState<boolean>(
     localStorage.getItem("theme") === "dark"
   );
+  const [copySuccess, setCopySuccess] = useState<string>("");
   const apiKey = import.meta.env.VITE_MISTRAL_API_KEY;
 
   useEffect(() => {
@@ -63,6 +64,17 @@ function App() {
     }
   };
 
+  const handleCopy = () => {
+    if (translatedText) {
+      navigator.clipboard
+        .writeText(translatedText)
+        .then(() => setCopySuccess("Copied!"))
+        .catch(() => setCopySuccess("Failed to copy"));
+
+      setTimeout(() => setCopySuccess(""), 2000);
+    }
+  };
+
   const languages = [
     "English",
     "Italian",
@@ -83,7 +95,6 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-gray-900 text-black dark:text-white flex flex-col justify-center items-center px-4 sm:px-10 py-8">
-      {/* Dark Mode Toggle */}
       <div className="absolute top-4 right-4">
         <button
           className="p-2 border rounded-full bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
@@ -93,16 +104,13 @@ function App() {
         </button>
       </div>
 
-      {/* Main container with responsive layout */}
-      <div className="flex flex-col lg:flex-row w-full max-w-screen-lg border border-blue-500  rounded-lg shadow-lg overflow-hidden h-auto lg:h-[70vh]">
-        {/* Input and Output Sections */}
+      <div className="flex flex-col lg:flex-row w-full max-w-screen-lg border-none  rounded-lg shadow-lg overflow-hidden h-auto lg:h-[70vh]">
         {["Input", "Output"].map((section, index) => (
           <div
             key={section}
             className="flex flex-col w-full lg:w-1/2 p-4 bg-white dark:bg-gray-800"
             style={{ minHeight: "50vh" }}
           >
-            {/* Language Selector */}
             <div
               className={`flex ${
                 index === 0 ? "justify-start" : "justify-end"
@@ -116,7 +124,7 @@ function App() {
                     ? setFromLanguage(e.target.value)
                     : setToLanguage(e.target.value)
                 }
-                className="border-2 border-blue-500 p-2 rounded w-full sm:w-auto focus:outline-none text-sm sm:text-base bg-white dark:bg-gray-700 text-black dark:text-white"
+                className="border border-blue-500 p-2 rounded w-full sm:w-auto focus:outline-none text-sm sm:text-base bg-white dark:bg-gray-700 text-black dark:text-white"
               >
                 {languages.map((language) => (
                   <option key={language} value={language}>
@@ -126,9 +134,8 @@ function App() {
               </select>
             </div>
 
-            {/* Content Section */}
             <div
-              className="flex flex-col gap-4 p-4 flex-grow border-2 border-blue-500  rounded bg-white dark:bg-gray-700 overflow-y-auto"
+              className="flex flex-col gap-4 p-4 flex-grow border  border-blue-500 rounded bg-white dark:bg-gray-700 overflow-y-auto"
               style={{ minHeight: "20vh" }}
             >
               {index === 0 ? (
@@ -145,16 +152,31 @@ function App() {
                   style={{ minHeight: "50px" }}
                 />
               ) : (
-                <div
-                  className="w-full h-full p-4 text-sm sm:text-base lg:text-lg text-black dark:text-white"
-                  style={{ minHeight: "50px" }}
-                >
-                  {translatedText ? (
-                    <p className="text-left">{translatedText}</p>
-                  ) : (
-                    <p className="text-left text-black/40 dark:text-white/40">
-                      Translation will appear here...
-                    </p>
+                <div className="relative">
+                  <div
+                    className="w-full h-full p-4 text-sm sm:text-base lg:text-lg text-black dark:text-white"
+                    style={{ minHeight: "50px" }}
+                  >
+                    {translatedText ? (
+                      <p className="text-left">{translatedText}</p>
+                    ) : (
+                      <p className="text-left text-black/40 dark:text-white/40">
+                        Translation will appear here...
+                      </p>
+                    )}
+                  </div>
+                  {translatedText && (
+                    <button
+                      onClick={handleCopy}
+                      className="absolute top-4 right-4 p-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-red-500 dark:hover:bg-red-600"
+                    >
+                      Copy
+                    </button>
+                  )}
+                  {copySuccess && (
+                    <span className="absolute top-16 right-4 text-sm text-green-600 dark:text-green-400">
+                      {copySuccess}
+                    </span>
                   )}
                 </div>
               )}
@@ -163,7 +185,6 @@ function App() {
         ))}
       </div>
 
-      {/* Translate Button */}
       <div className="w-full flex justify-center mt-4">
         <button
           className="bg-slate-600 dark:bg-slate-800 text-white p-3 text-base sm:text-lg lg:text-xl flex items-center justify-center rounded-xl cursor-pointer w-full sm:w-auto transform transition-transform hover:-translate-y-1"
